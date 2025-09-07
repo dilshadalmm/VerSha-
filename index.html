@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VersaChat - AI Chat Interface</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1200px;
+            height: 90vh;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        /* Sidebar Styles */
+        .sidebar {
+            width: 280px;
+            background: #2d3748;
+            color: white;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar-header {
+            padding: 24px;
+            border-bottom: 1px solid #4a5568;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .logo i {
+            color: #4299e1;
+        }
+        
+        .user-profile {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #4299e1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-name {
+            font-weight: 600;
+        }
+        
+        .user-status {
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        
+        .nav-menu {
+            padding: 20px 0;
+            flex: 1;
+        }
+        
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 24px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .nav-item:hover, .nav-item.active {
+            background: #4a5568;
+        }
+        
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .ai-assistant {
+            background: #4299e1;
+        }
+        
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid #4a5568;
+            text-align: center;
+            font-size: 12px;
+            color: #a0aec0;
+        }
+        
+        /* Chat Area Styles */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e2e8f0;
+        }
+        
+        .chat-header {
+            padding: 16px 24px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .chat-title {
+            font-weight: 600;
+            font-size: 18px;
+        }
+        
+        .chat-status {
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f7fafc;
+        }
+        
+        .message {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 16px;
+            position: relative;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message-incoming {
+            align-self: flex-start;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-bottom-left-radius: 4px;
+        }
+        
+        .message-outgoing {
+            align-self: flex-end;
+            background: #4299e1;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        
+        .message-sender {
+            font-weight: 600;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        
+        .message-time {
+            font-size: 12px;
+            text-align: right;
+            margin-top: 6px;
+            opacity: 0.8;
+        }
+        
+        .message-ai {
+            border-left: 4px solid #48bb78;
+        }
+        
+        .chat-input-area {
+            padding: 20px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .formatting-toolbar {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .format-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7fafc;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            color: #4a5568;
+        }
+        
+        .format-btn:hover {
+            background: #edf2f7;
+        }
+        
+        .input-container {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .message-input {
+            flex: 1;
+            padding: 14px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            resize: none;
+            height: 60px;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .message-input:focus {
+            outline: none;
+            border-color: #4299e1;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .action-btn {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #4299e1;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .upload-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            color: #4a5568;
+        }
+        
+        /* Right Panel Styles */
+        .right-panel {
+            width: 300px;
+            background: #f7fafc;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        
+        .panel-section {
+            background: white;
+            border-radius: 12px;
+            padding: 18px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-title {
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2d3748;
+        }
+        
+        .file-upload-area {
+            border: 2px dashed #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        
+        .file-upload-area:hover {
+            border-color: #4299e1;
+        }
+        
+        .upload-icon {
+            font-size: 32px;
+            color: #4299e1;
+            margin-bottom: 10px;
+        }
+        
+        .ai-assistant-info {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        
+        .ai-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 24px;
+            margin: 0 auto;
+        }
+        
+        .ai-description {
+            text-align: center;
+            color: #4a5568;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .ai-features {
+            list-style: none;
+            margin-top: 12px;
+        }
+        
+        .ai-features li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+        
+        .ai-features li i {
+            color: #48bb78;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 900px) {
+            .right-panel {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            
+            .sidebar {
+                width: 100%;
+                flex-direction: row;
+                padding: 12px;
+                align-items: center;
+            }
+            
+            .sidebar-header {
+                border-bottom: none;
+                padding: 0;
+                flex: 1;
+            }
+            
+            .nav-menu {
+                display: flex;
+                padding: 0;
+                flex: 2;
+                justify-content: flex-end;
+            }
+            
+            .nav-item {
+                padding: 10px;
+            }
+            
+            .nav-item span {
+                display: none;
+            }
+            
+            .user-profile {
+                margin-top: 0;
+            }
+            
+            .user-info {
+                display: none;
+            }
+            
+            .sidebar-footer {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <i class="fas fa-comments"></i>
+                    <span>VersaChat</span>
+                </div>
+                <div class="user-profile">
+                    <div class="user-avatar">JD</div>
+                    <div class="user-info">
+                        <div class="user-name">John Doe</div>
+                        <div class="user-status">Online</div>
+                    </div>
+                </div>
+            </div>
+            <div class="nav-menu">
+                <div class="nav-item active">
+                    <i class="fas fa-comment-dots"></i>
+                    <span>Chats</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-users"></i>
+                    <span>Contacts</span>
+                </div>
+                <div class="nav-item ai-assistant">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-history"></i>
+                    <span>History</span>
+                </div>
+                <div class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">
+                <p>VersaChat v1.0</p>
+                <p>Secure messaging</p>
+            </div>
+        </div>
+        
+        <!-- Chat Area -->
+        <div class="chat-area">
+            <div class="chat-header">
+                <div class="chat-avatar">
+                    <i class="fas fa-robot" style="color: #48bb78; font-size: 24px;"></i>
+                </div>
+                <div>
+                    <div class="chat-title">Ali - AI Assistant</div>
+                    <div class="chat-status">Online - responds instantly</div>
+                </div>
+            </div>
+            
+            <div class="chat-messages">
+                <div class="message message-incoming message-ai">
+                    <div class="message-sender">Ali</div>
+                    <div class="message-content">Hello! I'm Ali, your AI assistant. How can I help you today?</div>
+                    <div class="message-time">10:00 AM</div>
+                </div>
+                
+                <div class="message message-outgoing">
+                    <div class="message-content">Hi Ali, can you help me with my project presentation?</div>
+                    <div class="message-time">10:02 AM</div>
+                </div>
+                
+                <div class="message message-incoming message-ai">
+                    <div class="message-sender">Ali</div>
+                    <div class="message-content">Of course! I'd be happy to help. What kind of project are you working on?</div>
+                    <div class="message-time">10:02 AM</div>
+                </div>
+                
+                <div class="message message-outgoing">
+                    <div class="message-content">I'm creating a marketing strategy for a new product launch.</div>
+                    <div class="message-time">10:03 AM</div>
+                </div>
+                
+                <div class="message message-incoming message-ai">
+                    <div class="message-sender">Ali</div>
+                    <div class="message-content">Great! I can assist with market analysis, presentation structure, and even generate creative ideas. Would you like me to review any documents you have?</div>
+                    <div class="message-time">10:03 AM</div>
+                </div>
+            </div>
+            
+            <div class="chat-input-area">
+                <div class="formatting-toolbar">
+                    <button class="format-btn"><i class="fas fa-bold"></i></button>
+                    <button class="format-btn"><i class="fas fa-italic"></i></button>
+                    <button class="format-btn"><i class="fas fa-link"></i></button>
+                    <button class="format-btn"><i class="fas fa-list-ul"></i></button>
+                    <button class="format-btn"><i class="fas fa-list-ol"></i></button>
+                </div>
+                
+                <div class="input-container">
+                    <textarea class="message-input" placeholder="Type your message here..."></textarea>
+                    <div class="action-buttons">
+                        <button class="action-btn upload-btn">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <button class="action-btn send-btn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-file-upload"></i>
+                    <span>File Upload</span>
+                </div>
+                <div class="file-upload-area">
+                    <div class="upload-icon">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <p>Drag & drop files here or click to browse</p>
+                    <small>Supports: images, documents, PDFs</small>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </div>
+                <div class="ai-assistant-info">
+                    <div class="ai-avatar">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3>Ali - Your AI Assistant</h3>
+                    <p class="ai-description">Powered by Gemini and Genkit, Ali provides intelligent responses and assistance for your tasks.</p>
+                    
+                    <ul class="ai-features">
+                        <li><i class="fas fa-check-circle"></i> Natural conversations</li>
+                        <li><i class="fas fa-check-circle"></i> Content generation</li>
+                        <li><i class="fas fa-check-circle"></i> Document analysis</li>
+                        <li><i class="fas fa-check-circle"></i> Idea brainstorming</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-history"></i>
+                    <span>Recent Files</span>
+                </div>
+                <p>No recent files</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Simple message sending functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const messageInput = document.querySelector('.message-input');
+            const sendButton = document.querySelector('.send-btn');
+            const chatMessages = document.querySelector('.chat-messages');
+            
+            function sendMessage() {
+                const messageText = messageInput.value.trim();
+                if (messageText) {
+                    // Create new message element
+                    const messageElement = document.createElement('div');
+                    messageElement.className = 'message message-outgoing';
+                    messageElement.innerHTML = `
+                        <div class="message-content">${messageText}</div>
+                        <div class="message-time">${getCurrentTime()}</div>
+                    `;
+                    
+                    // Add to chat
+                    chatMessages.appendChild(messageElement);
+                    
+                    // Clear input
+                    messageInput.value = '';
+                    
+                    // Scroll to bottom
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                    
+                    // Simulate AI response after a short delay
+                    setTimeout(simulateAIResponse, 1000);
+                }
+            }
+            
+            function simulateAIResponse() {
+                const responses = [
+                    "I understand. How can I assist with that?",
+                    "That's interesting. Tell me more about it.",
+                    "I can help with that. What specific information do you need?",
+                    "Let me think about the best way to approach this.",
+                    "I've analyzed your request and here's what I suggest..."
+                ];
+                
+                const randomResponse = responses[Math.floor(Math.random() * responses.length)];
+                
+                const messageElement = document.createElement('div');
+                messageElement.className = 'message message-incoming message-ai';
+                messageElement.innerHTML = `
+                    <div class="message-sender">Ali</div>
+                    <div class="message-content">${randomResponse}</div>
+                    <div class="message-time">${getCurrentTime()}</div>
+                `;
+                
+                chatMessages.appendChild(messageElement);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
+            function getCurrentTime() {
+                const now = new Date();
+                return now.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            }
+            
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            
+            messageInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // File upload area interaction
+            const uploadArea = document.querySelector('.file-upload-area');
+            uploadArea.addEventListener('click', function() {
+                alert('File upload dialog would open here. In a real application, this would allow you to select files from your device.');
+            });
+        });
+    </script>
+</body>
+</html>
